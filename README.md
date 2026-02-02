@@ -1,56 +1,3 @@
-# Real-Time Chat Application
-
-A Django-based real-time chat application using Django Channels (WebSockets), JWT authentication, and MySQL.
-
-## Features
-
-### Must-Have
-- **JWT Authentication** – Register / login via REST endpoints; tokens used for both API and WebSocket auth
-- **Real-time messaging** – Django Channels WebSocket consumer with instant message delivery
-- **Message persistence** – Every message stored in MySQL before broadcast
-- **Access control** – Only authenticated chat participants can connect, send, or receive messages
-- **Chat history API** – `GET /api/chat/history/<user_id>/` returns messages ordered oldest → newest
-
-### Bonus (all implemented)
-- **Typing indicator** – Live "user is typing…" events over WebSocket
-- **Online / offline status** – Tracked via `UserProfile` and broadcast on connect/disconnect
-- **Message delivery & read status** – `is_delivered` set when the receiver's socket receives the message; `is_read` set via explicit read-receipt events
-- **Docker setup** – `docker-compose.yml` with MySQL, Redis, and the Django app
-- **Unit tests** – Accounts and chat test suites covering models, API endpoints, and persistence logic
-
----
-
-## Tech Stack
-
-| Component | Technology |
-|-----------|-----------|
-| Backend | Django 4.2, Django REST Framework |
-| WebSockets | Django Channels 4 + Daphne |
-| Auth | djangorestframework-simplejwt (JWT) |
-| Channel Layer | Redis 7 via channels-redis |
-| Database | MySQL 8 |
-| Containerisation | Docker + Docker Compose |
-
----
-
-## Project Structure
-
-```
-Django_message_app/
-├── config/             # Django project settings, URLs, ASGI/WSGI
-├── accounts/           # User registration, JWT login, user profiles
-├── chat/               # Message model, history API, WebSocket consumer
-│   ├── consumers.py    # Async WebSocket consumer
-│   ├── middleware.py   # JWT auth middleware for Channels
-│   └── routing.py      # WebSocket URL routing
-├── templates/chat/     # Minimal functional chat UI
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-└── manage.py
-```
-
----
 
 ## Setup
 
@@ -104,19 +51,13 @@ pip install -r requirements.txt
 python manage.py migrate
 ```
 
-5. Create a superuser (optional, for admin panel):
-
-```bash
-python manage.py createsuperuser
-```
-
-6. Start the ASGI server:
+5. Start the ASGI server:
 
 ```bash
 daphne -b 0.0.0.0 -p 8000 config.asgi:application
 ```
 
-7. Open `http://localhost:8000` in your browser.
+. Open `http://localhost:8000` in your browser.
 
 ---
 
@@ -161,34 +102,18 @@ ws://localhost:8000/ws/chat/<user_id>/?token=<jwt_access_token>
 
 ```json
 // Incoming message
-{"type": "chat_message", "message_id": 1, "message": "Hello!", "sender_id": 2, "sender_username": "bob", "timestamp": "...", "is_delivered": true, "is_read": false}
+{"type": "chat_message", "message_id": 1, "message": "Hello!", "sender_id": 2, "sender_username": "Qasim1", "timestamp": "...", "is_delivered": true, "is_read": false}
 
 // Typing indicator
-{"type": "typing", "user_id": 2, "username": "bob", "is_typing": true}
+{"type": "typing", "user_id": 2, "username": "Qasim1", "is_typing": true}
 
 // Online/offline status
-{"type": "user_status", "user_id": 2, "username": "bob", "status": "online"}
+{"type": "user_status", "user_id": 2, "username": "Qasim1", "status": "online"}
 
 // Read receipt
 {"type": "read_receipt", "message_ids": [1, 2], "reader_id": 2}
 ```
 
----
-
-## Running Tests
-
-```bash
-python manage.py test accounts chat --verbosity=2
-```
-
-> **Note:** Tests use Django's default test database. For the unit tests provided, no Redis connection is required (they test the ORM and REST layers only).
 
 ---
 
-## Security
-
-- **No hard-coded credentials** – All DB/secret values loaded from environment variables
-- **JWT-only WebSocket auth** – Token validated in custom Channels middleware before the consumer runs
-- **Participant-only access** – Consumer rejects connections from users not involved in the chat
-- **CSRF protection** – Active on all Django views via middleware
-- **Message isolation** – History API filters by `(sender, receiver)` pair; users cannot read other conversations
